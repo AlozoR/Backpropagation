@@ -2,8 +2,10 @@
 Backpropagation from scratch
 """
 
+from csv import reader
 from math import exp
-from random import random, seed
+from random import random, seed, shuffle
+from typing import Any, List
 
 
 def initialize_network(n_inputs, n_hidden, n_outputs):
@@ -92,6 +94,33 @@ def predict(network, row):
     return outputs.index(max(outputs))
 
 
+def load_csv(filename):
+    dataset: List[List[Any]] = list()
+    with open(filename, "r") as file:
+        csv_reader = reader(file)
+        for row in csv_reader:
+            if not row:
+                continue
+            dataset.append(row)
+
+    for col in range(len(dataset[0]) - 1):
+        for row in dataset:
+            row[col] = float(row[col].strip())
+
+    col = len(dataset[0]) - 1
+    for row in dataset:
+        row[col] = int(row[col].strip()) - 1
+    return dataset
+
+
+def normalize(dataset):
+    minmax = [[min(column), max(column)] for column in zip(*dataset)]
+    length = len(dataset[0]) - 1
+    for i in range(length):
+        for row in dataset:
+            row[i] = (row[i] - minmax[i][0]) / (minmax[i][1] - minmax[i][0])
+
+
 def main():
     seed(1)
     network = initialize_network(2, 1, 2)
@@ -118,13 +147,44 @@ def main():
     n_inputs = len(dataset[0]) - 1
     n_outputs = 2
     network = initialize_network(n_inputs, 2, n_outputs)
-    train_network(network, dataset, 0.5, 20, n_outputs)
+    # train_network(network, dataset, 0.5, 20, n_outputs)
 
-    for row in dataset:
+    # for row in dataset:
+    #     prediction = predict(network, row)
+    #     print(f"Expected={row[-1]}, Got={prediction}")
+    # for layer in network:
+    #     print(layer)
+
+    seed(1)
+    dataset = load_csv("data/wheat-seeds.csv")
+    shuffle(dataset)
+    normalize(dataset)
+    split_limit = int(0.8 * len(dataset))
+    training_set = dataset[:split_limit]
+    test_set = dataset[split_limit:]
+    # print('Training set:')
+    # for row in training_set:
+    #     print(row)
+    # print('Test set:')
+    # for row in test_set:
+    #     print(row)
+
+    n_inputs = len(training_set[0]) - 1
+    n_hidden = 5
+    n_outputs = 3
+    network = initialize_network(n_inputs, n_hidden, n_outputs)
+    train_network(network, training_set, 0.5, 200, n_outputs)
+
+    n_correct = 0
+    for row in test_set:
         prediction = predict(network, row)
+        if prediction == row[-1]:
+            n_correct += 1
         print(f"Expected={row[-1]}, Got={prediction}")
-    for layer in network:
-        print(layer)
+
+    print(f"Accuracy: {n_correct / len(test_set)}")
+    # for layer in network:
+    #     print(layer)
 
 
 if __name__ == "__main__":
