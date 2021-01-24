@@ -87,6 +87,11 @@ def train_network(network, train, l_rate, n_epoch, n_outputs):
         print(f">epoch={epoch}, lrate={l_rate:.3f}, error={sum_error:.3f}")
 
 
+def predict(network, row):
+    outputs = forward_propagate(network, row)
+    return outputs.index(max(outputs))
+
+
 def main():
     seed(1)
     network = initialize_network(2, 1, 2)
@@ -114,6 +119,10 @@ def main():
     n_outputs = 2
     network = initialize_network(n_inputs, 2, n_outputs)
     train_network(network, dataset, 0.5, 20, n_outputs)
+
+    for row in dataset:
+        prediction = predict(network, row)
+        print(f"Expected={row[-1]}, Got={prediction}")
     for layer in network:
         print(layer)
 
