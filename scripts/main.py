@@ -61,6 +61,32 @@ def backward_propagate_error(network, expected):
             neuron["delta"] = errors[j] * transfer_derivative(neuron["output"])
 
 
+def update_weights(network, row, l_rate):
+    for i, layer in enumerate(network):
+        inputs = row[:-1]
+        if i != 0:
+            inputs = [neuron["output"] for neuron in network[i - 1]]
+        for neuron in layer:
+            for j, inp in enumerate(inputs):
+                neuron["weights"][j] += l_rate * neuron["delta"] * inp
+            neuron["weights"][-1] = l_rate * neuron["delta"]
+
+
+def train_network(network, train, l_rate, n_epoch, n_outputs):
+    for epoch in range(n_epoch):
+        sum_error = 0
+        for row in train:
+            outputs = forward_propagate(network, row)
+            expected = [0 for i in range(n_outputs)]
+            expected[row[-1]] = 1
+            sum_error += sum(
+                [(expected[i] - outputs[i]) ** 2 for i in range(len(expected))]
+            )
+            backward_propagate_error(network, expected)
+            update_weights(network, row, l_rate)
+        print(f">epoch={epoch}, lrate={l_rate:.3f}, error={sum_error:.3f}")
+
+
 def main():
     seed(1)
     network = initialize_network(2, 1, 2)
@@ -68,7 +94,28 @@ def main():
     forward_propagate(network, row)
     expected = [0, 1]
     backward_propagate_error(network, expected)
-    print(network)
+    # print(network)
+
+    seed(1)
+    dataset = [
+        [2.7810836, 2.550537003, 0],
+        [1.465489372, 2.362125076, 0],
+        [3.396561688, 4.400293529, 0],
+        [1.38807019, 1.850220317, 0],
+        [3.06407232, 3.005305973, 0],
+        [7.627531214, 2.759262235, 1],
+        [5.332441248, 2.088626775, 1],
+        [6.922596716, 1.77106367, 1],
+        [8.675418651, -0.242068655, 1],
+        [7.673756466, 3.508563011, 1],
+    ]
+
+    n_inputs = len(dataset[0]) - 1
+    n_outputs = 2
+    network = initialize_network(n_inputs, 2, n_outputs)
+    train_network(network, dataset, 0.5, 20, n_outputs)
+    for layer in network:
+        print(layer)
 
 
 if __name__ == "__main__":
