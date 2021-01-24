@@ -40,13 +40,35 @@ def forward_propagate(network, row):
     return inputs
 
 
+def transfer_derivative(output):
+    return output * (1.0 - output)
+
+
+def backward_propagate_error(network, expected):
+    for i in reversed(range(len(network))):
+        layer = network[i]
+        errors = list()
+        if i != len(network) - 1:
+            for j in range(len(layer)):
+                error = 0.0
+                for neuron in network[i + 1]:
+                    error += neuron["weights"][j] * neuron["delta"]
+                errors.append(error)
+        else:
+            for j, neuron in enumerate(layer):
+                errors.append(expected[j] - neuron["output"])
+        for j, neuron in enumerate(layer):
+            neuron["delta"] = errors[j] * transfer_derivative(neuron["output"])
+
+
 def main():
     seed(1)
     network = initialize_network(2, 1, 2)
-    print(network)
     row = [1, 0, None]
-    output = forward_propagate(network, row)
-    print(output)
+    forward_propagate(network, row)
+    expected = [0, 1]
+    backward_propagate_error(network, expected)
+    print(network)
 
 
 if __name__ == "__main__":
